@@ -1,4 +1,3 @@
-using System.Reflection;
 using UnityEngine;
 
 namespace Wondeluxe.Tweening.Samples
@@ -10,38 +9,30 @@ namespace Wondeluxe.Tweening.Samples
 
 		private Tween tween;
 
-		private void Awake()
-		{
-		}
+		//private void Awake()
+		//{
+		//}
 
-		private void OnEnable()
-		{
-		}
+		//private void OnEnable()
+		//{
+		//}
 
-		private void OnDisable()
-		{
-		}
+		//private void OnDisable()
+		//{
+		//}
 
 		private void Start()
 		{
-			//PropertyInfo propertyInfo = spriteTransform.GetType().GetProperty("position");
-			//ITweenableMemberInfo memberInfo = propertyInfo as ITweenableMemberInfo;
-
-			//Debug.Log($"propertyInfo = {propertyInfo}");
-			//Debug.Log($"memberInfo = {memberInfo}");
-
-			//memberInfo.SetValue(spriteTransform, Vector3.up);
-
-			//propertyInfo.SetValue(spriteTransform, Vector3.up);
-
 			tween = new Tween(
 				target: spriteTransform,
-				members: new { position = Vector3.up },
+				members: new { position = Vector3.up, rotation = Quaternion.Euler(0f, 0f, 90f) },
 				delay: 1f,
-				duration: 3f,
-				repeat: -1,
-				yoyo: true
+				duration: 2f,
+				repeat: 5,
+				yoyo: true,
+				tag: "Awesome"
 			);
+			tween.OnRepeat += OnTweenRepeat;
 		}
 
 		private void Update()
@@ -49,9 +40,9 @@ namespace Wondeluxe.Tweening.Samples
 			tween.Update(Time.deltaTime);
 		}
 
-		private void FixedUpdate()
+		private void OnTweenRepeat(Tween t)
 		{
-
+			Debug.Log($"Tween '{t.Tag}' repeat.");
 		}
 	}
 }

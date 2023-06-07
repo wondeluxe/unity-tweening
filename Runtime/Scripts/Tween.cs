@@ -319,18 +319,20 @@ namespace Wondeluxe.Tweening
 
 					// For accuracy, the tween should only be progressed by the required time to finish the iteration.
 
-					float durationDelta = Mathf.Min(duration - currentTime, deltaTime);
+					float tweenTime = currentTime - currentDelay;
+					float tweenDelta = Mathf.Min(duration - tweenTime, deltaTime);
 
-					currentTime += durationDelta;
-					deltaTime -= durationDelta;
+					tweenTime += tweenDelta;
+					currentTime += tweenDelta;
+					deltaTime -= tweenDelta;
 
-					float normalizedTime = Mathf.Clamp(currentTime - currentDelay, 0f, duration);
+					float normalizedTime = Mathf.Clamp(tweenTime / duration, 0f, 1f);
 
 					UpdateItems(normalizedTime);
 
 					OnUpdate?.Invoke(this);
 
-					if (currentTime >= duration)
+					if (normalizedTime >= 1f)
 					{
 						iterations++;
 
