@@ -12,5 +12,12 @@
 		"tween",
 		"easing",
 		"ease"
+	],
+	"samples": [
+		{
+			"displayName": "Samples",
+			"description": "Example usage of the Tween class.",
+			"path": "Samples"
+		}
 	]
 }

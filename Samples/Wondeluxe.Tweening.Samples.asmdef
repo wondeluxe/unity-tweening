@@ -1,0 +1,16 @@
+{
+    "name": "Wondeluxe.Tweening.Samples",
+    "rootNamespace": "",
+    "references": [
+        "GUID:12f4f9d9a25a44989abb76b5f035f551"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
