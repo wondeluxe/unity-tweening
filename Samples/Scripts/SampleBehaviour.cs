@@ -30,6 +30,7 @@ namespace Wondeluxe.Tweening.Samples
 				duration: 2f,
 				repeat: 5,
 				yoyo: true,
+				ease: SineEase.InOut,
 				tag: "Awesome"
 			);
 			tween.OnRepeat += OnTweenRepeat;
