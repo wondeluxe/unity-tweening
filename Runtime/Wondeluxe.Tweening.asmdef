@@ -1,3 +1,16 @@
 {
-	"name": "Wondeluxe.Tweening"
+    "name": "Wondeluxe.Tweening",
+    "rootNamespace": "",
+    "references": [
+        "GUID:b338bbc79b82c4ae28f21c1c2bd308c5"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

@@ -149,8 +149,7 @@ namespace Wondeluxe.Tweening
 	{
 		internal override object Evaluate(float t)
 		{
-			Vector2Int delta = to - from;
-			return new Vector2Int(from.x + (int)(delta.x * t), from.y + (int)(delta.y * t));
+			return Vector2IntExtensions.Lerp(from, to, t);
 		}
 	}
 
@@ -158,8 +157,7 @@ namespace Wondeluxe.Tweening
 	{
 		internal override object Evaluate(float t)
 		{
-			Vector3Int delta = to - from;
-			return new Vector3Int(from.x + (int)(delta.x * t), from.y + (int)(delta.y * t), from.z + (int)(delta.z * t));
+			return Vector3IntExtensions.Lerp(from, to, t);
 		}
 	}
 
