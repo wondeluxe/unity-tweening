@@ -1,11 +1,14 @@
 {
-    "name": "Wondeluxe.Tweening.Samples",
+    "name": "Wondeluxe.Tweening.Editor",
     "rootNamespace": "",
     "references": [
         "GUID:12f4f9d9a25a44989abb76b5f035f551",
+        "GUID:1ce866822d7b94dea84b295766936817",
         "GUID:b338bbc79b82c4ae28f21c1c2bd308c5"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

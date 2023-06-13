@@ -318,7 +318,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c1c0538459e454e6d89f4008627de001, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  spriteTransform: {fileID: 1556279375}
+  spriteTransform: {fileID: 0}
+  tween:
+    serializedTarget: {fileID: 1556279375}
+    testMembers: []
+    serializedMembers:
+      members:
+      - name: localPosition
+        type: UnityEngine.Vector3
+        value: (0, 2, 0)
+      - name: localRotation
+        type: UnityEngine.Quaternion
+        value: (0, 0, 0.5, 0.8660254)
+    delay: 0
+    duration: 0
+    repeat: 0
+    repeatDelay: 0
+    yoyo: 0
+    serializedEase:
+      option: None
+    tag: 
 --- !u!4 &1656696564
 Transform:
   m_ObjectHideFlags: 0

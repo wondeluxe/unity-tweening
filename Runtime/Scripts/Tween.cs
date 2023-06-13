@@ -3,13 +3,16 @@ using System.Reflection;
 using System.Collections.Generic;
 using UnityEngine;
 
+using Object = UnityEngine.Object;
+
 namespace Wondeluxe.Tweening
 {
 	/// <summary>
 	/// Object for tweening a target object's properties or fields.
 	/// </summary>
 
-	public class Tween
+	[Serializable]
+	public class Tween : ISerializationCallbackReceiver
 	{
 		#region Events
 
@@ -51,15 +54,57 @@ namespace Wondeluxe.Tweening
 
 		#endregion
 
+		#region Internal fields
+
+		[SerializeField]
+		[Component]
+		[Label("Target")]
+		private Object serializedTarget;
 		private object target;
+
+		[SerializeField]
+		private SerializableTweenMember[] testMembers;
+
+		[SerializeField]
+		[Label("Members")]// TODO Need to fix this for array/list fields.
+		private SerializableTweenMembers serializedMembers;
+		//private SerializableTweenMember[] serializedMembers;
 		private object members;
+
+		[SerializeField]
+		[Tooltip("Initial delay before the tween starts.")]
 		private float delay;
+
+		[SerializeField]
+		[Tooltip("Duration of an iteration of the tween, exluding Delay or RepeatDelay.")]
 		private float duration;
+
+		[SerializeField]
+		[Tooltip("How many times the tween should repeat. Use a negative value to indicate the tween should repeat indefinitely. The number of times a tween iterates will be Repeat + 1 (where Repeat >= 0).")]
 		private int repeat;
+
+		[SerializeField]
+		[Tooltip("Delay before repeat iterations of the tween begin.")]
 		private float repeatDelay;
+
+		[SerializeField]
+		[Tooltip("If true, every other iteration of the tween will be performed in reverse, creating a back and forth effect.")]
 		private bool yoyo;
+
+		// TODO Serialize as AnimationCurve and provide methods for setting Penner curves.
+
+		[SerializeField]
+		[Label("Ease")]
+		private SerializableEase serializedEase;
 		private Ease ease;
+
+		[SerializeField]
+		[Tooltip("An optional identifier for the tween.")]
 		private string tag;
+
+		/// <summary>
+		/// Indicates that <c>members</c> has been modified and <c>InitItems</c> should be called before the next update.
+		/// </summary>
 
 		private bool valuesDirty;
 
@@ -98,6 +143,10 @@ namespace Wondeluxe.Tweening
 		/// </summary>
 
 		private readonly List<TweenItem> items = new List<TweenItem>();
+
+		#endregion
+
+		#region Public API
 
 		public Tween(object target = null, object members = null, float delay = 0f, float duration = 0f, int repeat = 0, float repeatDelay = 0f, bool yoyo = false, Ease ease = null, string tag = null)
 		{
@@ -184,6 +233,9 @@ namespace Wondeluxe.Tweening
 		/// <summary>
 		/// How many times the tween should repeat. Use a negative value to indicate the tween should repeat indefinitely.
 		/// </summary>
+		/// <remarks>
+		/// The number of times a tween iterates will be <c>Repeat + 1</c> (where <c>Repeat >= 0</c>).
+		/// </remarks>
 
 		public int Repeat
 		{
@@ -383,6 +435,10 @@ namespace Wondeluxe.Tweening
 			}
 		}
 
+		#endregion
+
+		#region Internal methods
+
 		/// <summary>
 		/// Initializes items to be tweened.
 		/// </summary>
@@ -442,5 +498,25 @@ namespace Wondeluxe.Tweening
 				item.Udpate(target, normalizedTime);
 			}
 		}
+
+		#endregion
+
+		#region Serialization
+
+		public void OnBeforeSerialize()
+		{
+			//Debug.Log($"Before serialize.");
+
+			//serializedTargetObject = (Object)targetObject;
+		}
+
+		public void OnAfterDeserialize()
+		{
+			//Debug.Log($"After serialize.");
+
+			//targetObject = serializedTargetObject;
+		}
+
+		#endregion
 	}
 }
