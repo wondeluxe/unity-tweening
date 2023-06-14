@@ -321,15 +321,21 @@ MonoBehaviour:
   spriteTransform: {fileID: 0}
   tween:
     serializedTarget: {fileID: 1556279375}
-    testMembers: []
+    testMembers:
+    - name: 
+      type: 
+      value: 
+    - name: 
+      type: 
+      value: 
     serializedMembers:
       members:
       - name: localPosition
         type: UnityEngine.Vector3
-        value: (0, 2, 0)
-      - name: localRotation
-        type: UnityEngine.Quaternion
-        value: (0, 0, 0.5, 0.8660254)
+        value: (0, 0, 0)
+      - name: 
+        type: 
+        value: 
     delay: 0
     duration: 0
     repeat: 0

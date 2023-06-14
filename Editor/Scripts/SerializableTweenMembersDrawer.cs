@@ -6,17 +6,20 @@ using UnityEditor;
 using UnityEditorInternal;
 using Wondeluxe.Tweening;
 
-using Object = UnityEngine.Object;
-
 namespace WondeluxeEditor.Tweening
 {
 	[CustomPropertyDrawer(typeof(SerializableTweenMembers))]
 	public class SerializableTweenMembersDrawer : WondeluxePropertyDrawer
 	{
-		private readonly List<TweenableMemberInfo> validMembers = new List<TweenableMemberInfo>();
-		private SerializedProperty membersProperty;
+		#region Internal fields
+
+		private readonly List<TweenableMemberInfo> validMemberInfos = new List<TweenableMemberInfo>();
 		private SerializedProperty currentProperty;
 		private ReorderableList reorderableList;
+
+		#endregion
+
+		#region WondeluxePropertyDrawer implementation
 
 		public override bool HasCustomLayout => true;
 
@@ -38,41 +41,21 @@ namespace WondeluxeEditor.Tweening
 			// Called in WondeluxePropertyDrawer before/after OnCustomGUI.
 
 			currentProperty = property;
-			membersProperty = property.FindPropertyRelative("members");
 
-			validMembers.Clear();
-
-			SerializedProperty tweenProperty = property.GetParentProperty();
-			Object tweenTarget = tweenProperty.FindPropertyRelative("serializedTarget").objectReferenceValue;
-			Type tweenTargetType = tweenTarget.GetType();
-
-			FieldInfo[] fieldInfos = tweenTargetType.GetFields(BindingFlags.Instance | BindingFlags.Public);
-
-			foreach (FieldInfo fieldInfo in fieldInfos)
-			{
-				if (TweenUtility.IsTypeSupported(fieldInfo.FieldType))
-				{
-					validMembers.Add(new TweenableMemberInfo(fieldInfo.Name, fieldInfo.FieldType));
-				}
-			}
-
-			PropertyInfo[] propertyInfos = tweenTargetType.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-
-			foreach (PropertyInfo propertyInfo in propertyInfos)
-			{
-				if (TweenUtility.IsTypeSupported(propertyInfo.PropertyType) && propertyInfo.GetGetMethod() != null && propertyInfo.GetSetMethod() != null)
-				{
-					validMembers.Add(new TweenableMemberInfo(propertyInfo.Name, propertyInfo.PropertyType));
-				}
-			}
+			SetValidMemberInfos();
+			ValidateMembers();
 
 			property.isExpanded = EditorGUIExtensions.DrawFoldout(label.text, property.isExpanded, ref position);
 
 			if (property.isExpanded)
 			{
-				GetReorderableList(property).DoList(position);
+				GetReorderableList(property).DoList(EditorGUI.IndentedRect(position));
 			}
 		}
+
+		#endregion
+
+		#region ReorderableList implementation
 
 		private ReorderableList GetReorderableList(SerializedProperty property)
 		{
@@ -102,17 +85,13 @@ namespace WondeluxeEditor.Tweening
 
 		private void OnDrawListElement(Rect rect, int index, bool isActive, bool isFocused)
 		{
-			//Debug.Log($"OnDrawListElement (rect = {rect}, index = {index})");
-
-			// Rect needs to be shifted over so that the control doesn't overlap the element's handle.
-
-			//rect.x += 8f;
-			//rect.width -= 8f;
-
 			SerializableTweenMembers currentTweenMembers = currentProperty.GetValue<SerializableTweenMembers>();
 
-			Rect labelRect = new Rect(rect.x, rect.y, EditorGUIUtility.labelWidth - EditorGUIExtensions.SubLabelSpacing * 2f, rect.height);
-			Rect valueRect = new Rect(rect.x + EditorGUIUtility.labelWidth, rect.y, rect.width - EditorGUIUtility.labelWidth, rect.height);
+			float labelWidth = EditorGUIUtility.labelWidth - 20f;
+			float valueSpacing = EditorGUIExtensions.SubLabelSpacing;
+
+			Rect labelRect = new Rect(rect.x, rect.y, labelWidth - valueSpacing, rect.height);
+			Rect valueRect = new Rect(rect.x + labelWidth, rect.y, rect.width - labelWidth, rect.height);
 
 			SerializedProperty memberProperty = currentProperty.FindPropertyRelative("members").GetArrayElementAtIndex(index);
 			SerializedProperty nameProperty = memberProperty.FindPropertyRelative("name");
@@ -123,13 +102,13 @@ namespace WondeluxeEditor.Tweening
 			List<Type> optionTypes = new List<Type>();
 			int optionIndex = 0;
 
-			optionNames.Add("<select>");
+			optionNames.Add("<Select Member>");
 			optionTypes.Add(null);
 
-			for (int i = 0; i < validMembers.Count; i++)
+			for (int i = 0; i < validMemberInfos.Count; i++)
 			{
-				string validMemberName = validMembers[i].Name;
-				Type validMemberType = validMembers[i].Type;
+				string validMemberName = validMemberInfos[i].Name;
+				Type validMemberType = validMemberInfos[i].Type;
 
 				if (validMemberName == nameProperty.stringValue)
 				{
@@ -163,18 +142,95 @@ namespace WondeluxeEditor.Tweening
 
 		private bool OnCanAddListElement(ReorderableList list)
 		{
-			return (currentProperty.FindPropertyRelative("members").arraySize < validMembers.Count);
+			return (currentProperty.FindPropertyRelative("members").arraySize < validMemberInfos.Count);
 		}
 
 		private void OnAddListElement(ReorderableList list)
 		{
+			SerializedProperty membersProperty = currentProperty.FindPropertyRelative("members");
+
 			int newElementIndex = membersProperty.arraySize;
 
 			membersProperty.InsertArrayElementAtIndex(newElementIndex);
 
 			SerializedProperty newElementProperty = membersProperty.GetArrayElementAtIndex(newElementIndex);
 			newElementProperty.FindPropertyRelative("name").stringValue = null;
+			newElementProperty.FindPropertyRelative("type").stringValue = null;
 			newElementProperty.FindPropertyRelative("value").stringValue = null;
 		}
+
+		#endregion
+
+		#region Internal methods
+
+		private void SetValidMemberInfos()
+		{
+			validMemberInfos.Clear();
+
+			SerializedProperty tweenProperty = currentProperty.GetParentProperty();
+			SerializedProperty targetProperty = tweenProperty.FindPropertyRelative("serializedTarget");
+			Type type = targetProperty.objectReferenceValue.GetType();
+
+			FieldInfo[] fieldInfos = type.GetFields(BindingFlags.Instance | BindingFlags.Public);
+
+			foreach (FieldInfo fieldInfo in fieldInfos)
+			{
+				if (TweenUtility.IsTypeSupported(fieldInfo.FieldType))
+				{
+					validMemberInfos.Add(new TweenableMemberInfo(fieldInfo.Name, fieldInfo.FieldType));
+				}
+			}
+
+			PropertyInfo[] propertyInfos = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+
+			foreach (PropertyInfo propertyInfo in propertyInfos)
+			{
+				if (TweenUtility.IsTypeSupported(propertyInfo.PropertyType) && propertyInfo.GetGetMethod() != null && propertyInfo.GetSetMethod() != null)
+				{
+					validMemberInfos.Add(new TweenableMemberInfo(propertyInfo.Name, propertyInfo.PropertyType));
+				}
+			}
+		}
+
+		private void ValidateMembers()
+		{
+			SerializedProperty membersProperty = currentProperty.FindPropertyRelative("members");
+
+			for (int i = 0; i < membersProperty.arraySize; )
+			{
+				if (ValidateMember(membersProperty.GetArrayElementAtIndex(i)))
+				{
+					i++;
+				}
+				else
+				{
+					membersProperty.DeleteArrayElementAtIndex(i);
+				}
+			}
+		}
+
+		private bool ValidateMember(SerializedProperty memberProperty)
+		{
+			string nameValue = memberProperty.FindPropertyRelative("name").stringValue;
+
+			if (string.IsNullOrEmpty(nameValue))
+			{
+				return true;
+			}
+
+			string typeValue = memberProperty.FindPropertyRelative("type").stringValue;
+
+			foreach (TweenableMemberInfo memberInfo in validMemberInfos)
+			{
+				if (nameValue == memberInfo.Name && typeValue == memberInfo.Type.FullName)
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		#endregion
 	}
 }
