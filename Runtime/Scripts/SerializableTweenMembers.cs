@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Wondeluxe.Tweening
@@ -8,11 +10,16 @@ namespace Wondeluxe.Tweening
 	/// </summary>
 
 	[Serializable]
-	public class SerializableTweenMembers
+	public class SerializableTweenMembers : IEnumerable<SerializableTweenMember>
 	{
 		[SerializeField]
 		[HideInInspector]
 		private SerializableTweenMember[] members;
+
+		public SerializableTweenMember[] Members
+		{
+			get => members;
+		}
 
 		/// <summary>
 		/// Check if the collection of members contains a given member.
@@ -34,6 +41,72 @@ namespace Wondeluxe.Tweening
 			}
 
 			return false;
+		}
+
+		public IEnumerator<SerializableTweenMember> GetEnumerator()
+		{
+			return new Enumerator(members);
+		}
+
+		IEnumerator IEnumerable.GetEnumerator()
+		{
+			throw new NotImplementedException();
+		}
+
+		/// <summary>
+		/// Enumerates the elements of a <see cref="SerializableTweenMembers"/>.
+		/// </summary>
+
+		public class Enumerator : IEnumerator<SerializableTweenMember>
+		{
+			private SerializableTweenMember[] members;
+			private int position = -1;
+
+			public Enumerator(SerializableTweenMember[] members)
+			{
+				this.members = members;
+			}
+
+			public SerializableTweenMember Current
+			{
+				get
+				{
+					try
+					{
+						return members[position];
+					}
+					catch (IndexOutOfRangeException)
+					{
+						throw new InvalidOperationException();
+					}
+				}
+			}
+
+			object IEnumerator.Current
+			{
+				get
+				{
+					throw new NotImplementedException();
+				}
+			}
+
+			public bool MoveNext()
+			{
+				//return (++position < members.Length);
+
+				position++;
+				return position < members.Length;
+			}
+
+			public void Reset()
+			{
+				position = -1;
+			}
+
+			public void Dispose()
+			{
+				members = null;
+			}
 		}
 	}
 }

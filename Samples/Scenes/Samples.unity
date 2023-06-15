@@ -318,7 +318,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c1c0538459e454e6d89f4008627de001, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  spriteTransform: {fileID: 0}
+  spriteTransform: {fileID: 1556279375}
   tween:
     serializedTarget: {fileID: 1556279375}
     testMembers:
@@ -332,17 +332,18 @@ MonoBehaviour:
       members:
       - name: localPosition
         type: UnityEngine.Vector3
-        value: (0, 0, 0)
-      - name: 
-        type: 
-        value: 
-    delay: 0
-    duration: 0
-    repeat: 0
+        value: (0, 3, 0)
+      - name: localRotation
+        type: UnityEngine.Quaternion
+        value: (0, 0, 0.7071068, 0.7071068)
+    serializedMembersDirty: 1
+    delay: 1
+    duration: 1
+    repeat: -1
     repeatDelay: 0
-    yoyo: 0
+    yoyo: 1
     serializedEase:
-      option: None
+      option: Sine Out
     tag: 
 --- !u!4 &1656696564
 Transform:

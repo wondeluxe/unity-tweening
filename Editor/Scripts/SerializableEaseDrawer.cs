@@ -19,14 +19,20 @@ namespace WondeluxeEditor.Tweening
 			// BeginProperty/EndProperty calls not required.
 			// Called in WondeluxePropertyDrawer before/after OnCustomGUI.
 
+			// TODO Fix assignment issue in the inspector.
+
 			SerializableEase serializableEase = (SerializableEase)property.GetValue();
 
 			int index = serializableEase.OptionIndex;
 
-			EditorGUIExtensions.DrawOptionsField(label.text, index, SerializableEase.Options, ref position);
+			//Debug.Log($"index = {index}");
 
-			serializableEase.SetOption(index);
-			property.SetValue(serializableEase);
+			index = EditorGUIExtensions.DrawOptionsField(label.text, index, SerializableEase.Options, ref position);
+
+			//serializableEase.SetOption(index);
+			//property.SetValue(serializableEase);
+
+			property.FindPropertyRelative("option").stringValue = SerializableEase.Options[index];
 		}
 	}
 }

@@ -52,6 +52,11 @@ namespace Wondeluxe.Tweening
 		{
 			Info.SetValue(obj, Value.Evaluate(normalizedTime));
 		}
+
+		public override string ToString()
+		{
+			return $"(Name = {Info.Name}, From = {Value.From}, To = {Value.To})";
+		}
 	}
 
 	/// <summary>
@@ -82,6 +87,11 @@ namespace Wondeluxe.Tweening
 		internal override void Udpate(object obj, float normalizedTime)
 		{
 			Info.SetValue(obj, Value.Evaluate(normalizedTime));
+		}
+
+		public override string ToString()
+		{
+			return $"(Name = {Info.Name}, From = {Value.From}, To = {Value.To})";
 		}
 	}
 }

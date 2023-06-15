@@ -10,9 +10,12 @@ namespace Wondeluxe.Tweening.Samples
 		[SerializeField]
 		private Tween tween;
 
-		//private void Awake()
-		//{
-		//}
+		private float time;
+
+		private void Awake()
+		{
+			Debug.Log($"SampleBehaviour.Awake()");
+		}
 
 		//private void OnEnable()
 		//{
@@ -24,27 +27,31 @@ namespace Wondeluxe.Tweening.Samples
 
 		private void Start()
 		{
-			tween = new Tween(
-				target: spriteTransform,
-				members: new { position = Vector3.up, rotation = Quaternion.Euler(0f, 0f, 90f) },
-				delay: 1f,
-				duration: 2f,
-				repeat: 5,
-				yoyo: true,
-				ease: SineEase.InOut,
-				tag: "Awesome"
-			);
+			Debug.Log($"SampleBehaviour.Start()");
+
+			//tween = new Tween(
+			//	target: spriteTransform,
+			//	members: new { position = Vector3.up, rotation = Quaternion.Euler(0f, 0f, 90f) },
+			//	delay: 1f,
+			//	duration: 2f,
+			//	repeat: 5,
+			//	yoyo: true,
+			//	ease: SineEase.InOut,
+			//	tag: "Awesome"
+			//);
 			tween.OnRepeat += OnTweenRepeat;
 		}
 
 		private void Update()
 		{
+			time += Time.deltaTime;
 			tween.Update(Time.deltaTime);
 		}
 
 		private void OnTweenRepeat(Tween t)
 		{
-			Debug.Log($"Tween '{t.Tag}' repeat.");
+			Debug.Log($"Tween '{t.Tag}' repeat (time = {time}).");
+			time = 0f;
 		}
 
 		[Button]

@@ -60,22 +60,37 @@ namespace Wondeluxe.Tweening
 		[Component]
 		[Label("Target")]
 		private Object serializedTarget;
+
 		private object target;
 
 		[SerializeField]
 		private SerializableTweenMember[] testMembers;
 
 		[SerializeField]
-		[Label("Members")]// TODO Need to fix this for array/list fields.
+		[OnModified("OnSerializedMembersModified")]
+		[Label("Members")]
 		private SerializableTweenMembers serializedMembers;
-		//private SerializableTweenMember[] serializedMembers;
-		private object members;
 
 		[SerializeField]
+		[Readonly]
+		[Label("Members Dirty")]
+		private bool serializedMembersDirty;
+
+		private object members;
+
+		/// <summary>
+		/// Indicates that <c>members</c> has been modified and <c>ReadMembers</c> should be called before the next update.
+		/// </summary>
+
+		private bool membersDirty;
+
+		[SerializeField]
+		[OnModified("OnDelayModified")]
 		[Tooltip("Initial delay before the tween starts.")]
 		private float delay;
 
 		[SerializeField]
+		[OnModified("OnDurationModified")]
 		[Tooltip("Duration of an iteration of the tween, exluding Delay or RepeatDelay.")]
 		private float duration;
 
@@ -84,6 +99,7 @@ namespace Wondeluxe.Tweening
 		private int repeat;
 
 		[SerializeField]
+		[OnModified("OnRepeatDelayModified")]
 		[Tooltip("Delay before repeat iterations of the tween begin.")]
 		private float repeatDelay;
 
@@ -103,16 +119,14 @@ namespace Wondeluxe.Tweening
 		private string tag;
 
 		/// <summary>
-		/// Indicates that <c>members</c> has been modified and <c>InitItems</c> should be called before the next update.
-		/// </summary>
-
-		private bool valuesDirty;
-
-		/// <summary>
 		/// Time for the current iteration.
 		/// </summary>
 
 		private float currentTime;
+
+		private float currentNormalizedTime;
+
+		private float currentNormalizedDelayElapsed;
 
 		/// <summary>
 		/// The number of completed iterations.
@@ -142,7 +156,7 @@ namespace Wondeluxe.Tweening
 		/// Items representing the fields and properties to tween, along with their from and to values.
 		/// </summary>
 
-		private readonly List<TweenItem> items = new List<TweenItem>();
+		private List<TweenItem> items;
 
 		#endregion
 
@@ -160,7 +174,7 @@ namespace Wondeluxe.Tweening
 			this.ease = ease;
 			this.tag = tag;
 
-			valuesDirty = (members != null);
+			membersDirty = (members != null);
 		}
 
 		/// <summary>
@@ -188,7 +202,7 @@ namespace Wondeluxe.Tweening
 			set
 			{
 				members = value;
-				valuesDirty = true;
+				membersDirty = true;
 			}
 		}
 
@@ -201,12 +215,8 @@ namespace Wondeluxe.Tweening
 			get => delay;
 			set
 			{
-				if (iterations == 0 && currentTime <= delay)
-				{
-					currentTime = currentTime / delay * value;
-				}
-
 				delay = value;
+				OnDelayModified();
 			}
 		}
 
@@ -219,14 +229,8 @@ namespace Wondeluxe.Tweening
 			get => duration;
 			set
 			{
-				float currentDelay = (iterations == 0) ? delay : repeatDelay;
-
-				if (currentTime > currentDelay)
-				{
-					currentTime = currentDelay + (currentTime - currentDelay) / duration * value;
-				}
-
 				duration = value;
+				OnDurationModified();
 			}
 		}
 
@@ -252,12 +256,8 @@ namespace Wondeluxe.Tweening
 			get => repeatDelay;
 			set
 			{
-				if (iterations > 0 && currentTime <= repeatDelay)
-				{
-					currentTime = currentTime / repeatDelay * value;
-				}
-
 				repeatDelay = value;
+				OnRepeatDelayModified();
 			}
 		}
 
@@ -348,6 +348,8 @@ namespace Wondeluxe.Tweening
 
 					currentTime += delayDelta;
 					deltaTime -= delayDelta;
+
+					currentNormalizedDelayElapsed = currentTime / currentDelay;
 				}
 
 				if (currentTime == currentDelay)
@@ -364,27 +366,41 @@ namespace Wondeluxe.Tweening
 
 				if (deltaTime > 0f)
 				{
-					if (valuesDirty)
+					if (membersDirty)
 					{
-						InitItems();
+						ReadMembers();
+					}
+					else if (serializedMembersDirty)
+					{
+						ReadSerializedMembers();
+						//items = new List<TweenItem>();
 					}
 
 					// For accuracy, the tween should only be progressed by the required time to finish the iteration.
 
-					float tweenTime = currentTime - currentDelay;
-					float tweenDelta = Mathf.Min(duration - tweenTime, deltaTime);
+					//float normalizedTime;
 
-					tweenTime += tweenDelta;
-					currentTime += tweenDelta;
-					deltaTime -= tweenDelta;
+					if (duration > 0f)
+					{
+						float tweenTime = currentTime - currentDelay;
+						float tweenDelta = Mathf.Min(duration - tweenTime, deltaTime);
 
-					float normalizedTime = Mathf.Clamp(tweenTime / duration, 0f, 1f);
+						tweenTime += tweenDelta;
+						currentTime += tweenDelta;
+						deltaTime -= tweenDelta;
 
-					UpdateItems(normalizedTime);
+						currentNormalizedTime = Mathf.Clamp(tweenTime / duration, 0f, 1f);
+					}
+					else
+					{
+						currentNormalizedTime = 1f;
+					}
+
+					UpdateItems(currentNormalizedTime);
 
 					OnUpdate?.Invoke(this);
 
-					if (normalizedTime >= 1f)
+					if (currentNormalizedTime >= 1f)
 					{
 						iterations++;
 
@@ -393,6 +409,12 @@ namespace Wondeluxe.Tweening
 						if (repeat < 0 || iterations <= repeat)
 						{
 							currentTime = 0f;
+							currentNormalizedTime = 0f;
+
+							if (duration <= 0f)
+							{
+								deltaTime = 0f;
+							}
 						}
 						else
 						{
@@ -424,11 +446,9 @@ namespace Wondeluxe.Tweening
 				}
 
 				currentTime = duration;
+				currentNormalizedTime = 1f;
 
-				float currentDelay = (iterations == 0) ? delay : repeatDelay;
-				float normalizedTime = Mathf.Clamp(currentTime - currentDelay, 0f, duration);
-
-				UpdateItems(normalizedTime);
+				UpdateItems(currentNormalizedTime);
 
 				iterations++;
 				completed = true;
@@ -440,12 +460,83 @@ namespace Wondeluxe.Tweening
 		#region Internal methods
 
 		/// <summary>
-		/// Initializes items to be tweened.
+		/// Invoked when <see cref="serializedTarget"/> is modiefied from the Inspector.
 		/// </summary>
 
-		private void InitItems()
+		private void OnSerializedTargetModified()
 		{
-			items.Clear();
+			// TODO Need to validate existing members.
+			//if (Application.isPlaying)
+			//{
+			//}
+		}
+
+		/// <summary>
+		/// Invoked when <see cref="serializedMembers"/> is modified from the Inspector.
+		/// </summary>
+
+		private void OnSerializedMembersModified()
+		{
+			serializedMembersDirty = true;
+		}
+
+		/// <summary>
+		/// Invoked when <see cref="delay"/> is modified from the Inspector, of from the <see cref="Delay"/> setter.
+		/// </summary>
+
+		private void OnDelayModified()
+		{
+			if (iterations == 0 && currentNormalizedDelayElapsed <= 1f)
+			{
+				currentTime = delay * currentNormalizedDelayElapsed;
+			}
+		}
+
+		/// <summary>
+		/// Invoked when <see cref="duration"/> is modified from the Inspector, of from the <see cref="Duration"/> setter.
+		/// </summary>
+
+		private void OnDurationModified()
+		{
+			float currentDelay = (iterations == 0) ? delay : repeatDelay;
+
+			if (currentTime > currentDelay)
+			{
+				currentTime = currentDelay + duration * currentNormalizedTime;
+			}
+		}
+
+		/// <summary>
+		/// Invoked when <see cref="repeatDelay"/> is modified from the Inspector, of from the <see cref="RepeatDelay"/> setter.
+		/// </summary>
+
+		private void OnRepeatDelayModified()
+		{
+			if (iterations > 0 && currentNormalizedDelayElapsed <= 1f)
+			{
+				currentTime = repeatDelay * currentNormalizedDelayElapsed;
+			}
+		}
+
+		/// <summary>
+		/// Invoked when <see cref="serializedEase"/> is modiefied from the Inspector.
+		/// </summary>
+
+		private void OnSerializedEaseModified()
+		{
+			if (Application.isPlaying)
+			{
+				ease = serializedEase.GetValue();
+			}
+		}
+
+		/// <summary>
+		/// Initializes tween items using the <see cref="members"/> field.
+		/// </summary>
+
+		private void ReadMembers()
+		{
+			items = new List<TweenItem>();
 
 			Type targetType = target.GetType();
 			Type membersType = members.GetType();
@@ -472,7 +563,46 @@ namespace Wondeluxe.Tweening
 				throw new Exception($"Member '{memberInfo.Name}' not found on object of type '{targetType}'.");
 			}
 
-			valuesDirty = false;
+			membersDirty = false;
+		}
+
+		/// <summary>
+		/// Initializes tween items using the <see cref="serializedMembers"/> field.
+		/// </summary>
+
+		private void ReadSerializedMembers()
+		{
+			items = new List<TweenItem>();
+
+			Type targetType = target.GetType();
+
+			foreach (SerializableTweenMember member in serializedMembers)
+			{
+				if (string.IsNullOrWhiteSpace(member.Value))
+				{
+					continue;
+				}
+
+				FieldInfo fieldInfo = targetType.GetField(member.Name);
+
+				if (fieldInfo != null)
+				{
+					items.Add(new FieldItem(fieldInfo, fieldInfo.GetValue(target), member.ParseValue()));
+					continue;
+				}
+
+				PropertyInfo propertyInfo = targetType.GetProperty(member.Name);
+
+				if (propertyInfo != null)
+				{
+					items.Add(new PropertyItem(propertyInfo, propertyInfo.GetValue(target), member.ParseValue()));
+					continue;
+				}
+
+				throw new Exception($"Member '{member.Name}' not found on object of type '{targetType}'.");
+			}
+
+			serializedMembersDirty = false;
 		}
 
 		/// <summary>
@@ -486,7 +616,7 @@ namespace Wondeluxe.Tweening
 
 			if (ease != null)
 			{
-				normalizedTime = reverse ? (1f - ease(normalizedTime)) : ease(normalizedTime);
+				normalizedTime = reverse ? ease(1f - normalizedTime) : ease(normalizedTime);
 			}
 			else if (reverse)
 			{
@@ -503,18 +633,27 @@ namespace Wondeluxe.Tweening
 
 		#region Serialization
 
+		/// <summary>
+		/// Invoked before Unity serializes the object. Ensure serialized fields match the runtime data. Not for general use.
+		/// </summary>
+
 		public void OnBeforeSerialize()
 		{
-			//Debug.Log($"Before serialize.");
+			//Debug.Log($"OnBeforeSerialize (items = {(items == null ? "null" : $"{{{string.Join(", ", items)}}}")})");
 
 			//serializedTargetObject = (Object)targetObject;
 		}
 
+		/// <summary>
+		/// Invoked after Unity deserializes the object. Ensure runtime data matches the serialized fields. Not for general use.
+		/// </summary>
+
 		public void OnAfterDeserialize()
 		{
-			//Debug.Log($"After serialize.");
+			//Debug.Log($"OnAfterDeserialize (items = {(items == null ? "null" : $"{{{string.Join(", ", items)}}}")})");
 
-			//targetObject = serializedTargetObject;
+			target = serializedTarget;
+			ease = serializedEase.GetValue();
 		}
 
 		#endregion
