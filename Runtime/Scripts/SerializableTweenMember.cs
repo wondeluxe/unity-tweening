@@ -56,6 +56,8 @@ namespace Wondeluxe.Tweening
 		{
 			//Type type = System.Type.GetType(this.type);
 
+			//typeof(int).AssemblyQualifiedName.Contains(type);
+
 			if (type == typeof(int).FullName)
 				return int.Parse(value);
 

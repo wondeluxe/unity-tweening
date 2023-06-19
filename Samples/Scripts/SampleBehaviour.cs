@@ -12,6 +12,9 @@ namespace Wondeluxe.Tweening.Samples
 
 		private float time;
 
+		//[SerializeField]
+		//private AnimationCurve curve = AnimationCurveExtensions.BounceInOut(0f, 0f, 3f, 2f);
+
 		private void Awake()
 		{
 			Debug.Log($"SampleBehaviour.Awake()");

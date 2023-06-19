@@ -8,6 +8,9 @@ namespace Wondeluxe.Tweening
 
 	public static class TweenUtility
 	{
+		// TODO Add internal CreateValue method.
+		// TODO Add editor methods here?
+
 		/// <summary>
 		/// Check if a type can be tweened.
 		/// </summary>

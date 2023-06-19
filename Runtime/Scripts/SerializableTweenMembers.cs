@@ -92,10 +92,7 @@ namespace Wondeluxe.Tweening
 
 			public bool MoveNext()
 			{
-				//return (++position < members.Length);
-
-				position++;
-				return position < members.Length;
+				return (++position < members.Length);
 			}
 
 			public void Reset()

@@ -8,8 +8,8 @@ using Wondeluxe.Tweening;
 
 namespace WondeluxeEditor.Tweening
 {
-	//[CustomPropertyDrawer(typeof(SerializableTweenMembers))]
-	public class SerializableTweenMembersDrawer : WondeluxePropertyDrawer
+	[CustomPropertyDrawer(typeof(TweenMembers))]
+	public class TweenMembersDrawer : WondeluxePropertyDrawer
 	{
 		#region Internal fields
 
@@ -51,6 +51,8 @@ namespace WondeluxeEditor.Tweening
 			{
 				GetReorderableList(property).DoList(EditorGUI.IndentedRect(position));
 			}
+
+			ChildrenHandled(property);
 		}
 
 		#endregion
@@ -68,9 +70,11 @@ namespace WondeluxeEditor.Tweening
 
 			if (reorderableList == null)
 			{
-				reorderableList = new ReorderableList(null, property.FindPropertyRelative("members"), true, false, true, true);
-				reorderableList.drawElementCallback = OnDrawListElement;
+				reorderableList = new ReorderableList(null, property.FindPropertyRelative("names"), true, false, true, true);
 				reorderableList.elementHeightCallback = OnGetListElementHeight;
+				reorderableList.drawElementCallback = OnDrawListElement;
+				// TODO Implement reorder.
+				//reorderableList.onReorderCallbackWithDetails = OnReorderListElement;
 				reorderableList.onCanAddCallback = OnCanAddListElement;
 				reorderableList.onAddCallback = OnAddListElement;
 			}
@@ -85,18 +89,11 @@ namespace WondeluxeEditor.Tweening
 
 		private void OnDrawListElement(Rect rect, int index, bool isActive, bool isFocused)
 		{
-			SerializableTweenMembers currentTweenMembers = currentProperty.GetValue<SerializableTweenMembers>();
+			TweenMembers currentTweenMembers = currentProperty.GetValue<TweenMembers>();
 
-			float labelWidth = EditorGUIUtility.labelWidth - 20f;
-			float valueSpacing = EditorGUIExtensions.SubLabelSpacing;
-
-			Rect labelRect = new Rect(rect.x, rect.y, labelWidth - valueSpacing, rect.height);
-			Rect valueRect = new Rect(rect.x + labelWidth, rect.y, rect.width - labelWidth, rect.height);
-
-			SerializedProperty memberProperty = currentProperty.FindPropertyRelative("members").GetArrayElementAtIndex(index);
-			SerializedProperty nameProperty = memberProperty.FindPropertyRelative("name");
-			SerializedProperty typeProperty = memberProperty.FindPropertyRelative("type");
-			SerializedProperty valueProperty = memberProperty.FindPropertyRelative("value");
+			SerializedProperty memberNameProperty = currentProperty.FindPropertyRelative("names").GetArrayElementAtIndex(index);
+			SerializedProperty memberTypeProperty = currentProperty.FindPropertyRelative("serializedTypes").GetArrayElementAtIndex(index);
+			SerializedProperty memberValueProperty = currentProperty.FindPropertyRelative("serializedValues").GetArrayElementAtIndex(index);
 
 			List<string> optionNames = new List<string>();
 			List<Type> optionTypes = new List<Type>();
@@ -110,53 +107,68 @@ namespace WondeluxeEditor.Tweening
 				string validMemberName = validMemberInfos[i].Name;
 				Type validMemberType = validMemberInfos[i].Type;
 
-				if (validMemberName == nameProperty.stringValue)
+				if (validMemberName == memberNameProperty.stringValue)
 				{
 					optionIndex = optionNames.Count;
 					optionNames.Add(validMemberName);
 					optionTypes.Add(validMemberType);
 				}
-				else if (!currentTweenMembers.ContainsMember(validMemberName))
+				else if (!currentTweenMembers.Contains(validMemberName))
 				{
 					optionNames.Add(validMemberName);
 					optionTypes.Add(validMemberType);
 				}
 			}
 
+			float labelWidth = EditorGUIUtility.labelWidth - 20f;
+			float valueSpacing = EditorGUIExtensions.SubLabelSpacing;
+
+			Rect labelRect = new Rect(rect.x, rect.y, labelWidth - valueSpacing, rect.height);
+
 			optionIndex = EditorGUI.Popup(labelRect, optionIndex, optionNames.ToArray());
 
 			if (optionIndex > 0)
 			{
-				string stringValue = (optionTypes[optionIndex].FullName == typeProperty.stringValue) ? valueProperty.stringValue : null;
+				Rect valueRect = new Rect(rect.x + labelWidth, rect.y, rect.width - labelWidth, rect.height);
 
-				nameProperty.stringValue = optionNames[optionIndex];
-				typeProperty.stringValue = optionTypes[optionIndex].FullName;
-				valueProperty.stringValue = TweenEditorGUIUtility.ValueField(valueRect, optionTypes[optionIndex], stringValue);
+				string stringValue = (optionTypes[optionIndex].FullName == memberTypeProperty.stringValue) ? memberValueProperty.stringValue : null;
+
+				memberNameProperty.stringValue = optionNames[optionIndex];
+				memberTypeProperty.stringValue = optionTypes[optionIndex].FullName;
+				memberValueProperty.stringValue = TweenEditorGUIUtility.ValueField(valueRect, optionTypes[optionIndex], stringValue);
 			}
 			else
 			{
-				nameProperty.stringValue = null;
-				valueProperty.stringValue = null;
+				memberNameProperty.stringValue = null;
+				memberValueProperty.stringValue = null;
 			}
+		}
+
+		private void OnReorderListElement(ReorderableList list, int oldIndex, int newIndex)
+		{
+			// TODO Implement.
 		}
 
 		private bool OnCanAddListElement(ReorderableList list)
 		{
-			return (currentProperty.FindPropertyRelative("members").arraySize < validMemberInfos.Count);
+			return (currentProperty.FindPropertyRelative("names").arraySize < validMemberInfos.Count);
 		}
 
 		private void OnAddListElement(ReorderableList list)
 		{
-			SerializedProperty membersProperty = currentProperty.FindPropertyRelative("members");
+			SerializedProperty memberNamesProperty = currentProperty.FindPropertyRelative("names");
+			SerializedProperty memberTypesProperty = currentProperty.FindPropertyRelative("serializedTypes");
+			SerializedProperty memberValuesProperty = currentProperty.FindPropertyRelative("serializedValues");
 
-			int newElementIndex = membersProperty.arraySize;
+			int newElementIndex = memberNamesProperty.arraySize;
 
-			membersProperty.InsertArrayElementAtIndex(newElementIndex);
+			memberNamesProperty.InsertArrayElementAtIndex(newElementIndex);
+			memberTypesProperty.InsertArrayElementAtIndex(newElementIndex);
+			memberValuesProperty.InsertArrayElementAtIndex(newElementIndex);
 
-			SerializedProperty newElementProperty = membersProperty.GetArrayElementAtIndex(newElementIndex);
-			newElementProperty.FindPropertyRelative("name").stringValue = null;
-			newElementProperty.FindPropertyRelative("type").stringValue = null;
-			newElementProperty.FindPropertyRelative("value").stringValue = null;
+			memberNamesProperty.GetArrayElementAtIndex(newElementIndex).stringValue = null;
+			memberTypesProperty.GetArrayElementAtIndex(newElementIndex).stringValue = null;
+			memberValuesProperty.GetArrayElementAtIndex(newElementIndex).stringValue = null;
 		}
 
 		#endregion
@@ -202,35 +214,39 @@ namespace WondeluxeEditor.Tweening
 
 		private void ValidateMembers()
 		{
-			SerializedProperty membersProperty = currentProperty.FindPropertyRelative("members");
+			SerializedProperty memberNamesProperty = currentProperty.FindPropertyRelative("names");
+			SerializedProperty memberTypesProperty = currentProperty.FindPropertyRelative("serializedTypes");
+			SerializedProperty memberValuesProperty = currentProperty.FindPropertyRelative("serializedValues");
 
-			for (int i = 0; i < membersProperty.arraySize; )
+			for (int i = 0; i < memberNamesProperty.arraySize;)
 			{
-				if (ValidateMember(membersProperty.GetArrayElementAtIndex(i)))
+				string name = memberNamesProperty.GetArrayElementAtIndex(i).stringValue;
+				string type = memberTypesProperty.GetArrayElementAtIndex(i).stringValue;
+
+				if (ValidateMember(name, type))
 				{
 					i++;
 				}
 				else
 				{
-					membersProperty.DeleteArrayElementAtIndex(i);
+					memberNamesProperty.DeleteArrayElementAtIndex(i);
+					memberTypesProperty.DeleteArrayElementAtIndex(i);
+					memberValuesProperty.DeleteArrayElementAtIndex(i);
 				}
 			}
 		}
 
-		private bool ValidateMember(SerializedProperty memberProperty)
+		private bool ValidateMember(string name, string type)
 		{
-			string nameValue = memberProperty.FindPropertyRelative("name").stringValue;
-
-			if (string.IsNullOrEmpty(nameValue))
+			if (string.IsNullOrEmpty(name))
 			{
 				return true;
 			}
 
-			string typeValue = memberProperty.FindPropertyRelative("type").stringValue;
-
 			foreach (TweenableMemberInfo memberInfo in validMemberInfos)
 			{
-				if (nameValue == memberInfo.Name && typeValue == memberInfo.Type.FullName)
+				//if (name == memberInfo.Name && memberInfo.Type.AssemblyQualifiedName.Contains(type))
+				if (name == memberInfo.Name && type == memberInfo.Type.FullName)
 				{
 					return true;
 				}

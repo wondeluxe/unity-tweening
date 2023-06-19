@@ -63,26 +63,24 @@ namespace Wondeluxe.Tweening
 
 		private object target;
 
-		[SerializeField]
-		private SerializableTweenMember[] testMembers;
+		//[SerializeField]
+		//[OnModified("OnSerializedMembersModified")]
+		//[Label("Members")]
+		//private SerializableTweenMembers serializedMembers;
+
+		//[SerializeField]
+		//[Readonly]
+		//[Label("Members Dirty")]
+		//private bool serializedMembersDirty;
 
 		[SerializeField]
-		[OnModified("OnSerializedMembersModified")]
-		[Label("Members")]
-		private SerializableTweenMembers serializedMembers;
-
-		[SerializeField]
-		[Readonly]
-		[Label("Members Dirty")]
-		private bool serializedMembersDirty;
-
-		private object members;
+		private TweenMembers members;
 
 		/// <summary>
 		/// Indicates that <c>members</c> has been modified and <c>ReadMembers</c> should be called before the next update.
 		/// </summary>
 
-		private bool membersDirty;
+		//private bool membersDirty;
 
 		[SerializeField]
 		[OnModified("OnDelayModified")]
@@ -110,9 +108,7 @@ namespace Wondeluxe.Tweening
 		// TODO Serialize as AnimationCurve and provide methods for setting Penner curves.
 
 		[SerializeField]
-		[Label("Ease")]
-		private SerializableEase serializedEase;
-		private Ease ease;
+		private AnimationCurve curve;
 
 		[SerializeField]
 		[Tooltip("An optional identifier for the tween.")]
@@ -162,7 +158,7 @@ namespace Wondeluxe.Tweening
 
 		#region Public API
 
-		public Tween(object target = null, object members = null, float delay = 0f, float duration = 0f, int repeat = 0, float repeatDelay = 0f, bool yoyo = false, Ease ease = null, string tag = null)
+		public Tween(object target = null, TweenMembers members = null, float delay = 0f, float duration = 0f, int repeat = 0, float repeatDelay = 0f, bool yoyo = false, AnimationCurve curve = null, string tag = null)
 		{
 			this.target = target;
 			this.members = members;
@@ -171,10 +167,10 @@ namespace Wondeluxe.Tweening
 			this.repeat = repeat;
 			this.repeatDelay = repeatDelay;
 			this.yoyo = yoyo;
-			this.ease = ease;
+			this.curve = curve;
 			this.tag = tag;
 
-			membersDirty = (members != null);
+			//membersDirty = (members != null);
 		}
 
 		/// <summary>
@@ -196,14 +192,14 @@ namespace Wondeluxe.Tweening
 		/// To modify the tween's members, the property should be re-assigned.
 		/// </remarks>
 
-		public object Members
+		public TweenMembers Members
 		{
 			get => members;
-			set
-			{
-				members = value;
-				membersDirty = true;
-			}
+			//set
+			//{
+			//	members = value;
+			//	members.Dirty = true;
+			//}
 		}
 
 		/// <summary>
@@ -272,13 +268,13 @@ namespace Wondeluxe.Tweening
 		}
 
 		/// <summary>
-		/// The easing function to use for the tween.
+		/// The curve to use for the tween.
 		/// </summary>
 
-		public Ease Ease
+		public AnimationCurve Curve
 		{
-			get => ease;
-			set => ease = value;
+			get => curve;
+			set => curve = value;
 		}
 
 		/// <summary>
@@ -366,15 +362,15 @@ namespace Wondeluxe.Tweening
 
 				if (deltaTime > 0f)
 				{
-					if (membersDirty)
+					if (members.Dirty)
 					{
 						ReadMembers();
 					}
-					else if (serializedMembersDirty)
-					{
-						ReadSerializedMembers();
-						//items = new List<TweenItem>();
-					}
+					//else if (serializedMembersDirty)
+					//{
+					//	ReadSerializedMembers();
+					//	//items = new List<TweenItem>();
+					//}
 
 					// For accuracy, the tween should only be progressed by the required time to finish the iteration.
 
@@ -472,13 +468,13 @@ namespace Wondeluxe.Tweening
 		}
 
 		/// <summary>
-		/// Invoked when <see cref="serializedMembers"/> is modified from the Inspector.
+		/// Invoked when <see cref="members"/> is modified from the Inspector.
 		/// </summary>
 
-		private void OnSerializedMembersModified()
-		{
-			serializedMembersDirty = true;
-		}
+		//private void OnMembersModified()
+		//{
+		//	members.Dirty = true;
+		//}
 
 		/// <summary>
 		/// Invoked when <see cref="delay"/> is modified from the Inspector, of from the <see cref="Delay"/> setter.
@@ -519,18 +515,6 @@ namespace Wondeluxe.Tweening
 		}
 
 		/// <summary>
-		/// Invoked when <see cref="serializedEase"/> is modiefied from the Inspector.
-		/// </summary>
-
-		private void OnSerializedEaseModified()
-		{
-			if (Application.isPlaying)
-			{
-				ease = serializedEase.GetValue();
-			}
-		}
-
-		/// <summary>
 		/// Initializes tween items using the <see cref="members"/> field.
 		/// </summary>
 
@@ -539,55 +523,14 @@ namespace Wondeluxe.Tweening
 			items = new List<TweenItem>();
 
 			Type targetType = target.GetType();
-			Type membersType = members.GetType();
-			PropertyInfo[] membersPropertyInfos = membersType.GetProperties();
 
-			foreach (PropertyInfo memberInfo in membersPropertyInfos)
+			foreach (TweenMember member in members)
 			{
-				FieldInfo fieldInfo = targetType.GetField(memberInfo.Name);
-
-				if (fieldInfo != null)
-				{
-					items.Add(new FieldItem(fieldInfo, fieldInfo.GetValue(target), memberInfo.GetValue(members)));
-					continue;
-				}
-
-				PropertyInfo propertyInfo = targetType.GetProperty(memberInfo.Name);
-
-				if (propertyInfo != null)
-				{
-					items.Add(new PropertyItem(propertyInfo, propertyInfo.GetValue(target), memberInfo.GetValue(members)));
-					continue;
-				}
-
-				throw new Exception($"Member '{memberInfo.Name}' not found on object of type '{targetType}'.");
-			}
-
-			membersDirty = false;
-		}
-
-		/// <summary>
-		/// Initializes tween items using the <see cref="serializedMembers"/> field.
-		/// </summary>
-
-		private void ReadSerializedMembers()
-		{
-			items = new List<TweenItem>();
-
-			Type targetType = target.GetType();
-
-			foreach (SerializableTweenMember member in serializedMembers)
-			{
-				if (string.IsNullOrWhiteSpace(member.Value))
-				{
-					continue;
-				}
-
 				FieldInfo fieldInfo = targetType.GetField(member.Name);
 
 				if (fieldInfo != null)
 				{
-					items.Add(new FieldItem(fieldInfo, fieldInfo.GetValue(target), member.ParseValue()));
+					items.Add(new FieldItem(fieldInfo, fieldInfo.GetValue(target), member.Value));
 					continue;
 				}
 
@@ -595,15 +538,54 @@ namespace Wondeluxe.Tweening
 
 				if (propertyInfo != null)
 				{
-					items.Add(new PropertyItem(propertyInfo, propertyInfo.GetValue(target), member.ParseValue()));
+					items.Add(new PropertyItem(propertyInfo, propertyInfo.GetValue(target), member.Value));
 					continue;
 				}
 
-				throw new Exception($"Member '{member.Name}' not found on object of type '{targetType}'.");
+				throw new ArgumentException($"Member '{member.Name}' not found on object of type '{targetType}'.");
 			}
 
-			serializedMembersDirty = false;
+			members.Dirty = false;
 		}
+
+		/// <summary>
+		/// Initializes tween items using the <see cref="serializedMembers"/> field.
+		/// </summary>
+
+		//private void ReadSerializedMembers()
+		//{
+		//	items = new List<TweenItem>();
+
+		//	Type targetType = target.GetType();
+
+		//	foreach (SerializableTweenMember member in serializedMembers)
+		//	{
+		//		if (string.IsNullOrWhiteSpace(member.Value))
+		//		{
+		//			continue;
+		//		}
+
+		//		FieldInfo fieldInfo = targetType.GetField(member.Name);
+
+		//		if (fieldInfo != null)
+		//		{
+		//			items.Add(new FieldItem(fieldInfo, fieldInfo.GetValue(target), member.ParseValue()));
+		//			continue;
+		//		}
+
+		//		PropertyInfo propertyInfo = targetType.GetProperty(member.Name);
+
+		//		if (propertyInfo != null)
+		//		{
+		//			items.Add(new PropertyItem(propertyInfo, propertyInfo.GetValue(target), member.ParseValue()));
+		//			continue;
+		//		}
+
+		//		throw new Exception($"Member '{member.Name}' not found on object of type '{targetType}'.");
+		//	}
+
+		//	serializedMembersDirty = false;
+		//}
 
 		/// <summary>
 		/// Update the tweened items.
@@ -614,9 +596,10 @@ namespace Wondeluxe.Tweening
 		{
 			bool reverse = (yoyo && iterations % 2 == 1);
 
-			if (ease != null)
+			if (curve != null)
 			{
-				normalizedTime = reverse ? ease(1f - normalizedTime) : ease(normalizedTime);
+				//normalizedTime = reverse ? curve(1f - normalizedTime) : curve(normalizedTime);
+				normalizedTime = curve.Evaluate(reverse ? (1f - normalizedTime) : normalizedTime);
 			}
 			else if (reverse)
 			{
@@ -653,7 +636,6 @@ namespace Wondeluxe.Tweening
 			//Debug.Log($"OnAfterDeserialize (items = {(items == null ? "null" : $"{{{string.Join(", ", items)}}}")})");
 
 			target = serializedTarget;
-			ease = serializedEase.GetValue();
 		}
 
 		#endregion
