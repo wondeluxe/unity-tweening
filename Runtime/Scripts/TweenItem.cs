@@ -3,24 +3,40 @@ using System.Reflection;
 namespace Wondeluxe.Tweening
 {
 	/// <summary>
-	/// Object holding the member info and to/from values used by a Tween.
+	/// Object for applying updates to a member in a <see cref="Tween"/>.
 	/// </summary>
 
 	internal abstract class TweenItem
 	{
 		/// <summary>
-		/// The to/from values used by a Tween.
+		/// Name of the member this TweenItem updates.
+		/// </summary>
+
+		internal abstract string Name { get; }
+
+		/// <summary>
+		/// The values this TweenItem will udpate a member from and to.
 		/// </summary>
 
 		internal TweenValue Value { get; set; }
 
 		/// <summary>
-		/// Updates a member of an object between the values assigned to Value.
+		/// Updates a member of an object between the values assigned to <see cref="Value"/>.
 		/// </summary>
 		/// <param name="obj">The object whose member to update.</param>
 		/// <param name="normalizedTime">The normalised time to caluclate the result value with.</param>
 
 		internal abstract void Udpate(object obj, float normalizedTime);
+
+		/// <summary>
+		/// Returns a string representation of the TweenItem.
+		/// </summary>
+		/// <returns>A string representation of the TweenItem.</returns>
+
+		public override string ToString()
+		{
+			return $"(Name = {Name}, From = {Value.From}, To = {Value.To})";
+		}
 	}
 
 	/// <summary>
@@ -34,6 +50,11 @@ namespace Wondeluxe.Tweening
 		/// </summary>
 
 		internal FieldInfo Info { get; private set; }
+
+		internal override string Name
+		{
+			get => Info.Name;
+		}
 
 		/// <summary>
 		/// Instantiate a new instance of FieldItem.
@@ -52,11 +73,6 @@ namespace Wondeluxe.Tweening
 		{
 			Info.SetValue(obj, Value.Evaluate(normalizedTime));
 		}
-
-		public override string ToString()
-		{
-			return $"(Name = {Info.Name}, From = {Value.From}, To = {Value.To})";
-		}
 	}
 
 	/// <summary>
@@ -70,6 +86,11 @@ namespace Wondeluxe.Tweening
 		/// </summary>
 
 		internal PropertyInfo Info { get; private set; }
+
+		internal override string Name
+		{
+			get => Info.Name;
+		}
 
 		/// <summary>
 		/// Instantiate a new instance of PropertyItem.
@@ -87,11 +108,6 @@ namespace Wondeluxe.Tweening
 		internal override void Udpate(object obj, float normalizedTime)
 		{
 			Info.SetValue(obj, Value.Evaluate(normalizedTime));
-		}
-
-		public override string ToString()
-		{
-			return $"(Name = {Info.Name}, From = {Value.From}, To = {Value.To})";
 		}
 	}
 }

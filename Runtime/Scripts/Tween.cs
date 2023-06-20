@@ -63,32 +63,19 @@ namespace Wondeluxe.Tweening
 
 		private object target;
 
-		//[SerializeField]
-		//[OnModified("OnSerializedMembersModified")]
-		//[Label("Members")]
-		//private SerializableTweenMembers serializedMembers;
-
-		//[SerializeField]
-		//[Readonly]
-		//[Label("Members Dirty")]
-		//private bool serializedMembersDirty;
-
 		[SerializeField]
+		[OnModified("OnMembersModified", false, true)]
 		private TweenMembers members;
 
-		/// <summary>
-		/// Indicates that <c>members</c> has been modified and <c>ReadMembers</c> should be called before the next update.
-		/// </summary>
-
-		//private bool membersDirty;
+		private bool membersProcessed;
 
 		[SerializeField]
-		[OnModified("OnDelayModified")]
+		[OnModified("OnDelayModified", false, true)]
 		[Tooltip("Initial delay before the tween starts.")]
 		private float delay;
 
 		[SerializeField]
-		[OnModified("OnDurationModified")]
+		[OnModified("OnDurationModified", false, true)]
 		[Tooltip("Duration of an iteration of the tween, exluding Delay or RepeatDelay.")]
 		private float duration;
 
@@ -97,7 +84,7 @@ namespace Wondeluxe.Tweening
 		private int repeat;
 
 		[SerializeField]
-		[OnModified("OnRepeatDelayModified")]
+		[OnModified("OnRepeatDelayModified", false, true)]
 		[Tooltip("Delay before repeat iterations of the tween begin.")]
 		private float repeatDelay;
 
@@ -105,10 +92,8 @@ namespace Wondeluxe.Tweening
 		[Tooltip("If true, every other iteration of the tween will be performed in reverse, creating a back and forth effect.")]
 		private bool yoyo;
 
-		// TODO Serialize as AnimationCurve and provide methods for setting Penner curves.
-
 		[SerializeField]
-		private AnimationCurve curve;
+		private AnimationCurve curve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
 
 		[SerializeField]
 		[Tooltip("An optional identifier for the tween.")]
@@ -120,9 +105,9 @@ namespace Wondeluxe.Tweening
 
 		private float currentTime;
 
-		private float currentNormalizedTime;
-
 		private float currentNormalizedDelayElapsed;
+
+		private float currentNormalizedTime;
 
 		/// <summary>
 		/// The number of completed iterations.
@@ -154,6 +139,13 @@ namespace Wondeluxe.Tweening
 
 		private List<TweenItem> items;
 
+		/// <summary>
+		/// Set to <c>true</c> when the members object has been modified.
+		/// Indicates that <see cref="items"/> should be reset during the next call to <see cref="Update(float)"/>.
+		/// </summary>
+
+		private bool itemsDirty;
+
 		#endregion
 
 		#region Public API
@@ -169,8 +161,6 @@ namespace Wondeluxe.Tweening
 			this.yoyo = yoyo;
 			this.curve = curve;
 			this.tag = tag;
-
-			//membersDirty = (members != null);
 		}
 
 		/// <summary>
@@ -186,20 +176,10 @@ namespace Wondeluxe.Tweening
 		/// <summary>
 		/// The members of Target to tween.
 		/// </summary>
-		/// <remarks>
-		/// Any object may be used to supply the tween's members. Reflection will be used on the given object to retrieve any fields or properties present, which will then be applied to Target during Update.
-		/// The supplied object should be treated as readonly. i.e. Modifying the the fields or properties of Values after it is assigned will have no effect on the Tween.
-		/// To modify the tween's members, the property should be re-assigned.
-		/// </remarks>
 
 		public TweenMembers Members
 		{
 			get => members;
-			//set
-			//{
-			//	members = value;
-			//	members.Dirty = true;
-			//}
 		}
 
 		/// <summary>
@@ -362,19 +342,18 @@ namespace Wondeluxe.Tweening
 
 				if (deltaTime > 0f)
 				{
-					if (members.Dirty)
+					if (!membersProcessed)
+					{
+						members.OnModified += OnMembersModified;
+						membersProcessed = true;
+						ReadMembers();
+					}
+					else if (itemsDirty)
 					{
 						ReadMembers();
 					}
-					//else if (serializedMembersDirty)
-					//{
-					//	ReadSerializedMembers();
-					//	//items = new List<TweenItem>();
-					//}
 
 					// For accuracy, the tween should only be progressed by the required time to finish the iteration.
-
-					//float normalizedTime;
 
 					if (duration > 0f)
 					{
@@ -468,13 +447,22 @@ namespace Wondeluxe.Tweening
 		}
 
 		/// <summary>
-		/// Invoked when <see cref="members"/> is modified from the Inspector.
+		/// Invoked (at runtime) when <see cref="members"/> is modified from the Inspector.
 		/// </summary>
 
-		//private void OnMembersModified()
-		//{
-		//	members.Dirty = true;
-		//}
+		private void OnMembersModified()
+		{
+			itemsDirty = true;
+		}
+
+		/// <summary>
+		/// Invoked (at runtime) when <see cref="members"/> is modified from code.
+		/// </summary>
+
+		private void OnMembersModified(TweenMembers tweenMembers)
+		{
+			itemsDirty = true;
+		}
 
 		/// <summary>
 		/// Invoked when <see cref="delay"/> is modified from the Inspector, of from the <see cref="Delay"/> setter.
@@ -520,12 +508,33 @@ namespace Wondeluxe.Tweening
 
 		private void ReadMembers()
 		{
-			items = new List<TweenItem>();
+			List<TweenItem> existingItems;
+
+			if (items == null)
+			{
+				items = new List<TweenItem>();
+				existingItems = new List<TweenItem>();
+			}
+			else
+			{
+				existingItems = new List<TweenItem>(items);
+				items.Clear();
+			}
 
 			Type targetType = target.GetType();
 
 			foreach (TweenMember member in members)
 			{
+				int itemIndex = existingItems.FindIndex((TweenItem i) => { return (i.Name == member.Name); });
+
+				if (itemIndex > -1)
+				{
+					existingItems[itemIndex].Value.To = member.Value;
+					items.Add(existingItems[itemIndex]);
+					existingItems.RemoveAt(itemIndex);
+					continue;
+				}
+
 				FieldInfo fieldInfo = targetType.GetField(member.Name);
 
 				if (fieldInfo != null)
@@ -545,47 +554,8 @@ namespace Wondeluxe.Tweening
 				throw new ArgumentException($"Member '{member.Name}' not found on object of type '{targetType}'.");
 			}
 
-			members.Dirty = false;
+			itemsDirty = false;
 		}
-
-		/// <summary>
-		/// Initializes tween items using the <see cref="serializedMembers"/> field.
-		/// </summary>
-
-		//private void ReadSerializedMembers()
-		//{
-		//	items = new List<TweenItem>();
-
-		//	Type targetType = target.GetType();
-
-		//	foreach (SerializableTweenMember member in serializedMembers)
-		//	{
-		//		if (string.IsNullOrWhiteSpace(member.Value))
-		//		{
-		//			continue;
-		//		}
-
-		//		FieldInfo fieldInfo = targetType.GetField(member.Name);
-
-		//		if (fieldInfo != null)
-		//		{
-		//			items.Add(new FieldItem(fieldInfo, fieldInfo.GetValue(target), member.ParseValue()));
-		//			continue;
-		//		}
-
-		//		PropertyInfo propertyInfo = targetType.GetProperty(member.Name);
-
-		//		if (propertyInfo != null)
-		//		{
-		//			items.Add(new PropertyItem(propertyInfo, propertyInfo.GetValue(target), member.ParseValue()));
-		//			continue;
-		//		}
-
-		//		throw new Exception($"Member '{member.Name}' not found on object of type '{targetType}'.");
-		//	}
-
-		//	serializedMembersDirty = false;
-		//}
 
 		/// <summary>
 		/// Update the tweened items.
@@ -598,7 +568,6 @@ namespace Wondeluxe.Tweening
 
 			if (curve != null)
 			{
-				//normalizedTime = reverse ? curve(1f - normalizedTime) : curve(normalizedTime);
 				normalizedTime = curve.Evaluate(reverse ? (1f - normalizedTime) : normalizedTime);
 			}
 			else if (reverse)
@@ -622,7 +591,7 @@ namespace Wondeluxe.Tweening
 
 		public void OnBeforeSerialize()
 		{
-			//Debug.Log($"OnBeforeSerialize (items = {(items == null ? "null" : $"{{{string.Join(", ", items)}}}")})");
+			//Debug.Log($"Tween.OnBeforeSerialize (items = {(items == null ? "null" : $"{{{string.Join(", ", items)}}}")})");
 
 			//serializedTargetObject = (Object)targetObject;
 		}
@@ -633,7 +602,7 @@ namespace Wondeluxe.Tweening
 
 		public void OnAfterDeserialize()
 		{
-			//Debug.Log($"OnAfterDeserialize (items = {(items == null ? "null" : $"{{{string.Join(", ", items)}}}")})");
+			//Debug.Log($"Tween.OnAfterDeserialize (items = {(items == null ? "null" : $"{{{string.Join(", ", items)}}}")})");
 
 			target = serializedTarget;
 		}

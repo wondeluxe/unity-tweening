@@ -29,5 +29,15 @@ namespace Wondeluxe.Tweening
 			Name = name;
 			Value = value;
 		}
+
+		/// <summary>
+		/// Return a string representation of the tween member.
+		/// </summary>
+		/// <returns>A string representation of the tween member.</returns>
+
+		public override string ToString()
+		{
+			return $"(Name = {Name}, Value = {Value})";
+		}
 	}
 }

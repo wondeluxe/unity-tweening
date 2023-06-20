@@ -8,7 +8,7 @@ namespace Wondeluxe.Tweening.Samples
 		private Transform spriteTransform;
 
 		[SerializeField]
-		private Tween tween;
+		private Tween tween = new Tween(delay: 1f, duration: 2f, repeat: -1, yoyo: true, curve: AnimationCurveExtensions.CubicEaseOut(0f, 0f, 1f, 1f));
 
 		private float time;
 
@@ -17,7 +17,7 @@ namespace Wondeluxe.Tweening.Samples
 
 		private void Awake()
 		{
-			Debug.Log($"SampleBehaviour.Awake()");
+			Debug.Log($"SampleBehaviour.Awake");
 		}
 
 		//private void OnEnable()
@@ -30,7 +30,7 @@ namespace Wondeluxe.Tweening.Samples
 
 		private void Start()
 		{
-			Debug.Log($"SampleBehaviour.Start()");
+			Debug.Log($"SampleBehaviour.Start");
 
 			//tween = new Tween(
 			//	target: spriteTransform,

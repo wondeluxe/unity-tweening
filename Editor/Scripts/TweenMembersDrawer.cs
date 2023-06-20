@@ -70,13 +70,13 @@ namespace WondeluxeEditor.Tweening
 
 			if (reorderableList == null)
 			{
-				reorderableList = new ReorderableList(null, property.FindPropertyRelative("names"), true, false, true, true);
+				reorderableList = new ReorderableList(null, property.FindPropertyRelative("serializedNames"), true, false, true, true);
 				reorderableList.elementHeightCallback = OnGetListElementHeight;
 				reorderableList.drawElementCallback = OnDrawListElement;
-				// TODO Implement reorder.
-				//reorderableList.onReorderCallbackWithDetails = OnReorderListElement;
 				reorderableList.onCanAddCallback = OnCanAddListElement;
 				reorderableList.onAddCallback = OnAddListElement;
+				reorderableList.onRemoveCallback = OnRemoveListElement;
+				reorderableList.onReorderCallbackWithDetails = OnReorderListElement;
 			}
 
 			return reorderableList;
@@ -91,7 +91,7 @@ namespace WondeluxeEditor.Tweening
 		{
 			TweenMembers currentTweenMembers = currentProperty.GetValue<TweenMembers>();
 
-			SerializedProperty memberNameProperty = currentProperty.FindPropertyRelative("names").GetArrayElementAtIndex(index);
+			SerializedProperty memberNameProperty = currentProperty.FindPropertyRelative("serializedNames").GetArrayElementAtIndex(index);
 			SerializedProperty memberTypeProperty = currentProperty.FindPropertyRelative("serializedTypes").GetArrayElementAtIndex(index);
 			SerializedProperty memberValueProperty = currentProperty.FindPropertyRelative("serializedValues").GetArrayElementAtIndex(index);
 
@@ -144,19 +144,14 @@ namespace WondeluxeEditor.Tweening
 			}
 		}
 
-		private void OnReorderListElement(ReorderableList list, int oldIndex, int newIndex)
-		{
-			// TODO Implement.
-		}
-
 		private bool OnCanAddListElement(ReorderableList list)
 		{
-			return (currentProperty.FindPropertyRelative("names").arraySize < validMemberInfos.Count);
+			return (currentProperty.FindPropertyRelative("serializedNames").arraySize < validMemberInfos.Count);
 		}
 
 		private void OnAddListElement(ReorderableList list)
 		{
-			SerializedProperty memberNamesProperty = currentProperty.FindPropertyRelative("names");
+			SerializedProperty memberNamesProperty = currentProperty.FindPropertyRelative("serializedNames");
 			SerializedProperty memberTypesProperty = currentProperty.FindPropertyRelative("serializedTypes");
 			SerializedProperty memberValuesProperty = currentProperty.FindPropertyRelative("serializedValues");
 
@@ -169,6 +164,22 @@ namespace WondeluxeEditor.Tweening
 			memberNamesProperty.GetArrayElementAtIndex(newElementIndex).stringValue = null;
 			memberTypesProperty.GetArrayElementAtIndex(newElementIndex).stringValue = null;
 			memberValuesProperty.GetArrayElementAtIndex(newElementIndex).stringValue = null;
+		}
+
+		private void OnRemoveListElement(ReorderableList list)
+		{
+			int index = list.index;
+
+			currentProperty.FindPropertyRelative("serializedNames").DeleteArrayElementAtIndex(index);
+			currentProperty.FindPropertyRelative("serializedTypes").DeleteArrayElementAtIndex(index);
+			currentProperty.FindPropertyRelative("serializedValues").DeleteArrayElementAtIndex(index);
+		}
+
+		private void OnReorderListElement(ReorderableList list, int oldIndex, int newIndex)
+		{
+			currentProperty.FindPropertyRelative("serializedNames").MoveArrayElement(oldIndex, newIndex);
+			currentProperty.FindPropertyRelative("serializedTypes").MoveArrayElement(oldIndex, newIndex);
+			currentProperty.FindPropertyRelative("serializedValues").MoveArrayElement(oldIndex, newIndex);
 		}
 
 		#endregion
@@ -214,7 +225,7 @@ namespace WondeluxeEditor.Tweening
 
 		private void ValidateMembers()
 		{
-			SerializedProperty memberNamesProperty = currentProperty.FindPropertyRelative("names");
+			SerializedProperty memberNamesProperty = currentProperty.FindPropertyRelative("serializedNames");
 			SerializedProperty memberTypesProperty = currentProperty.FindPropertyRelative("serializedTypes");
 			SerializedProperty memberValuesProperty = currentProperty.FindPropertyRelative("serializedValues");
 

@@ -321,26 +321,21 @@ MonoBehaviour:
   spriteTransform: {fileID: 0}
   tween:
     serializedTarget: {fileID: 1556279375}
-    testMembers:
-      id: 0
-      usable: 0
     members:
-      names:
+      serializedNames:
       - position
-      - localRotation
-      - localScale
+      - 
       serializedTypes:
       - UnityEngine.Vector3
       - UnityEngine.Quaternion
-      - UnityEngine.Vector3
       serializedValues:
       - (0, 3, 0)
-      - (0, 0, 0.7071068, 0.7071068)
-      - (0.7, 0.7, 0.7)
-      dirty: 0
-    delay: 0
-    duration: 0
-    repeat: 0
+      - 
+      serializedDirty: 0
+      dirty: 1
+    delay: 1
+    duration: 2
+    repeat: -1
     repeatDelay: 0
     yoyo: 0
     curve:
@@ -368,9 +363,6 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
     tag: 
-  testStruct:
-    Name: 
-    IsAwesome: 0
 --- !u!4 &1656696564
 Transform:
   m_ObjectHideFlags: 0

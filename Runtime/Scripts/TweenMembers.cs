@@ -5,22 +5,25 @@ using UnityEngine;
 
 namespace Wondeluxe.Tweening
 {
-	// TODO Implement ISerializationCallbackReceiver
-
 	/// <summary>
 	/// Defines the set of members that will be affected by a <see cref="Tween"/>.
 	/// </summary>
 
 	[Serializable]
-	public class TweenMembers : IEnumerable<TweenMember>
+	public class TweenMembers : IEnumerable<TweenMember>, ISerializationCallbackReceiver
 	{
+		/// <summary>
+		/// Dispatched (at runtime) when the set of members has been modified.
+		/// </summary>
+
+		internal event TweenMembersHandler OnModified;
+
 		/// <summary>
 		/// Names of the members to tween.
 		/// </summary>
 
-		//[OnModified("OnModified")]
 		[SerializeField]
-		private List<string> names = new List<string>();
+		private List<string> serializedNames = new List<string>();
 
 		/// <summary>
 		/// Types of the members to tween, required for deserialization.
@@ -38,17 +41,18 @@ namespace Wondeluxe.Tweening
 		private List<string> serializedValues;
 
 		/// <summary>
-		/// Values to tween to.
+		/// Names of the members to tween.
 		/// </summary>
 
-		private readonly List<object> values = new List<object>();
+		private List<string> names;
 
 		/// <summary>
-		/// Set to true when the set has been modified. Owning tween will reset to false.
+		/// Values to tween the members to.
 		/// </summary>
 
-		[SerializeField]
-		private bool dirty;
+		private List<object> values;
+
+		//private Dictionary<string, object> members;
 
 		// TODO Change constructor to take IEnumerable<TweenMember>
 
@@ -59,35 +63,31 @@ namespace Wondeluxe.Tweening
 
 		public TweenMembers(IEnumerable<KeyValuePair<string, object>> members)
 		{
+			names = new List<string>();
+			values = new List<object>();
+
+			//this.members = new Dictionary<string, object>();
+
 			foreach (KeyValuePair<string, object> member in members)
 			{
 				names.Add(member.Key);
 				values.Add(member.Value);
+				//this.members.Add(member.Key, member.Value);
 			}
-
-			dirty = true;
 		}
 
 		// TODO Might be better to throw custom exception for invalid indexers?
 
 		public object this[string name]
 		{
+			//get => members[name];
 			get => values[names.IndexOf(name)];
 			set
 			{
+				//members[name] = value;
 				values[names.IndexOf(name)] = value;
-				dirty = true;
+				OnModified?.Invoke(this);
 			}
-		}
-
-		/// <summary>
-		/// Indicates if the set of members to be tweened has been modified.
-		/// </summary>
-
-		internal bool Dirty
-		{
-			get => dirty;
-			set => dirty = value;
 		}
 
 		/// <summary>
@@ -98,6 +98,7 @@ namespace Wondeluxe.Tweening
 
 		public void Add(string name, object value)
 		{
+			//if (members.ContainsKey(name))
 			if (names.Contains(name))
 			{
 				throw new ArgumentException($"A member with name '{name}' already exists.");
@@ -105,7 +106,8 @@ namespace Wondeluxe.Tweening
 
 			names.Add(name);
 			values.Add(value);
-			dirty = true;
+			//members.Add(name, value);
+			OnModified?.Invoke(this);
 		}
 
 		/// <summary>
@@ -117,6 +119,7 @@ namespace Wondeluxe.Tweening
 
 		public bool TryAdd(string name, object value)
 		{
+			//if (members.ContainsKey(name))
 			if (names.Contains(name))
 			{
 				return false;
@@ -124,7 +127,8 @@ namespace Wondeluxe.Tweening
 
 			names.Add(name);
 			values.Add(value);
-			dirty = true;
+			//members.Add(name, value);
+			OnModified?.Invoke(this);
 
 			return true;
 		}
@@ -137,7 +141,8 @@ namespace Wondeluxe.Tweening
 		{
 			names.Clear();
 			values.Clear();
-			dirty = true;
+			//members.Clear();
+			OnModified?.Invoke(this);
 		}
 
 		/// <summary>
@@ -148,6 +153,7 @@ namespace Wondeluxe.Tweening
 
 		public bool Contains(string name)
 		{
+			//return members.ContainsKey(name);
 			return names.Contains(name);
 		}
 
@@ -159,6 +165,13 @@ namespace Wondeluxe.Tweening
 
 		public bool Remove(string name)
 		{
+			//if (members.Remove(name))
+			//{
+			//	return true;
+			//}
+
+			//return false;
+
 			int index = names.IndexOf(name);
 
 			if (index < 0)
@@ -168,7 +181,7 @@ namespace Wondeluxe.Tweening
 
 			names.RemoveAt(index);
 			values.RemoveAt(index);
-			dirty = true;
+			OnModified?.Invoke(this);
 
 			return true;
 		}
@@ -182,6 +195,7 @@ namespace Wondeluxe.Tweening
 
 		public T GetValue<T>(string name)
 		{
+			//return (T)members[name];
 			return (T)values[names.IndexOf(name)];
 		}
 
@@ -195,6 +209,15 @@ namespace Wondeluxe.Tweening
 
 		public bool TryGetValue<T>(string name, out T value)
 		{
+			//if (members.ContainsKey(name))
+			//{
+			//	value = (T)members[name];
+			//	return true;
+			//}
+
+			//value = default;
+			//return false;
+
 			int index = names.IndexOf(name);
 
 			if (index < 0)
@@ -209,18 +232,115 @@ namespace Wondeluxe.Tweening
 		}
 
 		/// <summary>
-		/// Invoked by the inspector when the set has been modified.
+		/// Invoked before Unity serializes the object. Ensure serialized fields match the runtime data. Not for general use.
 		/// </summary>
 
-		private void OnModified()
+		public void OnBeforeSerialize()
 		{
-			dirty = true;
+			if (names == null || values == null)
+			{
+				return;
+			}
+
+			if (serializedNames == null)
+			{
+				serializedNames = new List<string>();
+			}
+
+			if (serializedTypes == null)
+			{
+				serializedTypes = new List<string>();
+			}
+
+			if (serializedValues == null)
+			{
+				serializedValues = new List<string>();
+			}
+
+			List<string> namesToProcess = new List<string>(names);
+			List<object> valuesToProcess = new List<object>(values);
+
+			int serializedIndex = 0;
+
+			while (serializedIndex < serializedNames.Count)
+			{
+				if (string.IsNullOrWhiteSpace(serializedNames[serializedIndex]))
+				{
+					serializedIndex++;
+					continue;
+				}
+
+				int processIndex = namesToProcess.IndexOf(serializedNames[serializedIndex]);
+
+				if (processIndex < 0)
+				{
+					serializedNames.RemoveAt(serializedIndex);
+					serializedTypes.RemoveAt(serializedIndex);
+					serializedValues.RemoveAt(serializedIndex);
+					continue;
+				}
+
+				serializedNames[serializedIndex] = namesToProcess[processIndex];
+				serializedTypes[serializedIndex] = TweenUtility.SerializeType(valuesToProcess[processIndex].GetType());
+				serializedValues[serializedIndex] = TweenUtility.SerializeValue(valuesToProcess[processIndex]);
+
+				namesToProcess.RemoveAt(processIndex);
+				valuesToProcess.RemoveAt(processIndex);
+
+				serializedIndex++;
+			}
+
+			for (int i = 0; i < namesToProcess.Count; i++)
+			{
+				serializedNames.Add(namesToProcess[i]);
+				serializedTypes.Add(TweenUtility.SerializeType(valuesToProcess[i].GetType()));
+				serializedValues.Add(TweenUtility.SerializeValue(valuesToProcess[i]));
+			}
+		}
+
+		/// <summary>
+		/// Invoked after Unity deserializes the object. Ensure runtime data matches the serialized fields. Not for general use.
+		/// </summary>
+
+		public void OnAfterDeserialize()
+		{
+			if (serializedNames == null || serializedTypes == null || serializedValues == null)
+			{
+				return;
+			}
+
+			if (names == null)
+			{
+				names = new List<string>();
+			}
+			else
+			{
+				names.Clear();
+			}
+
+			if (values == null)
+			{
+				values = new List<object>();
+			}
+			else
+			{
+				values.Clear();
+			}
+
+			for (int i = 0; i < serializedNames.Count; i++)
+			{
+				if (!string.IsNullOrWhiteSpace(serializedNames[i]) && !string.IsNullOrWhiteSpace(serializedTypes[i]) && !string.IsNullOrWhiteSpace(serializedValues[i]))
+				{
+					names.Add(serializedNames[i]);
+					values.Add(TweenUtility.Deserialize(serializedTypes[i], serializedValues[i]));
+				}
+			}
 		}
 
 		/// <summary>
 		/// Returns an enumerator that iterates through the TweenMembers.
 		/// </summary>
-		/// <returns>A <see cref="TweenMembers.Enumerator"/> for the set.</returns>
+		/// <returns>A <see cref="Enumerator"/> for the set.</returns>
 
 		public IEnumerator<TweenMember> GetEnumerator()
 		{
@@ -292,4 +412,11 @@ namespace Wondeluxe.Tweening
 			}
 		}
 	}
+
+	/// <summary>
+	/// Ecnapsulates a method that is invoked by a TweenMembers instance.
+	/// </summary>
+	/// <param name="tweenMembers">The TweenMembers instance that invoked the method.</param>
+
+	internal delegate void TweenMembersHandler(TweenMembers tweenMembers);
 }
