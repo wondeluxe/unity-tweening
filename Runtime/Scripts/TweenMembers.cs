@@ -16,7 +16,7 @@ namespace Wondeluxe.Tweening
 		/// Dispatched (at runtime) when the set of members has been modified.
 		/// </summary>
 
-		internal event TweenMembersHandler OnModified;
+		internal event TweenMembersEventHandler OnModified;
 
 		/// <summary>
 		/// Names of the members to tween.
@@ -412,11 +412,4 @@ namespace Wondeluxe.Tweening
 			}
 		}
 	}
-
-	/// <summary>
-	/// Ecnapsulates a method that is invoked by a TweenMembers instance.
-	/// </summary>
-	/// <param name="tweenMembers">The TweenMembers instance that invoked the method.</param>
-
-	internal delegate void TweenMembersHandler(TweenMembers tweenMembers);
 }
