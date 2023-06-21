@@ -193,14 +193,24 @@ namespace WondeluxeEditor.Tweening
 			SerializedProperty tweenProperty = currentProperty.GetParentProperty();
 			SerializedProperty targetProperty = tweenProperty.FindPropertyRelative("serializedTarget");
 
-			if (targetProperty.objectReferenceValue == null)
+			Type type;
+
+			if (targetProperty.objectReferenceValue != null)
 			{
-				// TODO Need to display info that target must be set.
-
-				return;
+				type = targetProperty.objectReferenceValue.GetType();
 			}
+			else
+			{
+				Tween tween = tweenProperty.GetValue<Tween>();
 
-			Type type = targetProperty.objectReferenceValue.GetType();
+				if (tween.Tartet == null)
+				{
+					// TODO Need to display info that target must be set.
+					return;
+				}
+
+				type = tween.Tartet.GetType();
+			}
 
 			FieldInfo[] fieldInfos = type.GetFields(BindingFlags.Instance | BindingFlags.Public);
 

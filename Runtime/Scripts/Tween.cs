@@ -620,12 +620,10 @@ namespace Wondeluxe.Tweening
 			if (target == null)
 			{
 				target = serializedTarget;
-				Debug.Log($"null target assigned");
 			}
 			else if (target is Object)
 			{
 				target = serializedTarget;
-				Debug.Log($"Object target assigned");
 			}
 		}
 
