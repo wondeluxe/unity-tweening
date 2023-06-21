@@ -52,39 +52,41 @@ namespace Wondeluxe.Tweening
 
 		private List<object> values;
 
-		//private Dictionary<string, object> members;
-
-		// TODO Change constructor to take IEnumerable<TweenMember>
-
 		/// <summary>
-		/// Initializes a new instance of TweenMembers that contains the members copied from an enumerable collection of <c>TweenMember</c>.
+		/// Initializes a new instance of <see cref="TweenMembers"/> that is empty.
 		/// </summary>
-		/// <param name="members"></param>
 
-		public TweenMembers(IEnumerable<KeyValuePair<string, object>> members)
+		public TweenMembers()
 		{
 			names = new List<string>();
 			values = new List<object>();
+		}
 
-			//this.members = new Dictionary<string, object>();
+		/// <summary>
+		/// Initializes a new instance of <see cref="TweenMembers"/> that contains the members copied from an enumerable collection of <see cref="TweenMember"/>.
+		/// </summary>
+		/// <param name="members">The enumerable collection of <see cref="TweenMember"/> that is copied to the the new <see cref="TweenMembers"/>.</param>
 
-			foreach (KeyValuePair<string, object> member in members)
+		public TweenMembers(IEnumerable<TweenMember> members) : this()
+		{
+			foreach (TweenMember member in members)
 			{
-				names.Add(member.Key);
+				names.Add(member.Name);
 				values.Add(member.Value);
-				//this.members.Add(member.Key, member.Value);
 			}
 		}
 
-		// TODO Might be better to throw custom exception for invalid indexers?
+		/// <summary>
+		/// Indexer allowing client code to access a members value using [] notation.
+		/// </summary>
+		/// <param name="name">Name of the member whose value to access.</param>
+		/// <returns>The value of the member with name <paramref name="name"/>.</returns>
 
 		public object this[string name]
 		{
-			//get => members[name];
 			get => values[names.IndexOf(name)];
 			set
 			{
-				//members[name] = value;
 				values[names.IndexOf(name)] = value;
 				OnModified?.Invoke(this);
 			}
@@ -98,7 +100,6 @@ namespace Wondeluxe.Tweening
 
 		public void Add(string name, object value)
 		{
-			//if (members.ContainsKey(name))
 			if (names.Contains(name))
 			{
 				throw new ArgumentException($"A member with name '{name}' already exists.");
@@ -106,7 +107,6 @@ namespace Wondeluxe.Tweening
 
 			names.Add(name);
 			values.Add(value);
-			//members.Add(name, value);
 			OnModified?.Invoke(this);
 		}
 
@@ -119,7 +119,6 @@ namespace Wondeluxe.Tweening
 
 		public bool TryAdd(string name, object value)
 		{
-			//if (members.ContainsKey(name))
 			if (names.Contains(name))
 			{
 				return false;
@@ -127,7 +126,6 @@ namespace Wondeluxe.Tweening
 
 			names.Add(name);
 			values.Add(value);
-			//members.Add(name, value);
 			OnModified?.Invoke(this);
 
 			return true;
@@ -141,7 +139,6 @@ namespace Wondeluxe.Tweening
 		{
 			names.Clear();
 			values.Clear();
-			//members.Clear();
 			OnModified?.Invoke(this);
 		}
 
@@ -153,7 +150,6 @@ namespace Wondeluxe.Tweening
 
 		public bool Contains(string name)
 		{
-			//return members.ContainsKey(name);
 			return names.Contains(name);
 		}
 
@@ -165,13 +161,6 @@ namespace Wondeluxe.Tweening
 
 		public bool Remove(string name)
 		{
-			//if (members.Remove(name))
-			//{
-			//	return true;
-			//}
-
-			//return false;
-
 			int index = names.IndexOf(name);
 
 			if (index < 0)
@@ -195,7 +184,6 @@ namespace Wondeluxe.Tweening
 
 		public T GetValue<T>(string name)
 		{
-			//return (T)members[name];
 			return (T)values[names.IndexOf(name)];
 		}
 
@@ -209,15 +197,6 @@ namespace Wondeluxe.Tweening
 
 		public bool TryGetValue<T>(string name, out T value)
 		{
-			//if (members.ContainsKey(name))
-			//{
-			//	value = (T)members[name];
-			//	return true;
-			//}
-
-			//value = default;
-			//return false;
-
 			int index = names.IndexOf(name);
 
 			if (index < 0)

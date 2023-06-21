@@ -180,6 +180,16 @@ namespace Wondeluxe.Tweening
 		public TweenMembers Members
 		{
 			get => members;
+			set
+			{
+				if (members != null)
+				{
+					members.OnModified -= OnMembersModified;
+				}
+
+				members = value;
+				OnMembersModified();
+			}
 		}
 
 		/// <summary>
@@ -591,9 +601,12 @@ namespace Wondeluxe.Tweening
 
 		public void OnBeforeSerialize()
 		{
-			//Debug.Log($"Tween.OnBeforeSerialize (items = {(items == null ? "null" : $"{{{string.Join(", ", items)}}}")})");
+			//Debug.Log($"Tween.OnBeforeSerialize");
 
-			//serializedTargetObject = (Object)targetObject;
+			if (target is Object targetObject)
+			{
+				serializedTarget = targetObject;
+			}
 		}
 
 		/// <summary>
@@ -602,9 +615,18 @@ namespace Wondeluxe.Tweening
 
 		public void OnAfterDeserialize()
 		{
-			//Debug.Log($"Tween.OnAfterDeserialize (items = {(items == null ? "null" : $"{{{string.Join(", ", items)}}}")})");
+			//Debug.Log($"Tween.OnAfterDeserialize");
 
-			target = serializedTarget;
+			if (target == null)
+			{
+				target = serializedTarget;
+				Debug.Log($"null target assigned");
+			}
+			else if (target is Object)
+			{
+				target = serializedTarget;
+				Debug.Log($"Object target assigned");
+			}
 		}
 
 		#endregion

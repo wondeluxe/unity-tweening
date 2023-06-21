@@ -318,7 +318,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c1c0538459e454e6d89f4008627de001, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  spriteTransform: {fileID: 0}
+  spriteTransform: {fileID: 1556279375}
   tween:
     serializedTarget: {fileID: 1556279375}
     members:
@@ -331,8 +331,6 @@ MonoBehaviour:
       serializedValues:
       - (0, 3, 0)
       - 
-      serializedDirty: 0
-      dirty: 1
     delay: 1
     duration: 2
     repeat: -1

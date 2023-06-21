@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Wondeluxe.Tweening.Samples
@@ -7,17 +8,23 @@ namespace Wondeluxe.Tweening.Samples
 		[SerializeField]
 		private Transform spriteTransform;
 
+		//[SerializeField]
+		//private Tween tween = new Tween(delay: 1f, duration: 2f, repeat: -1, yoyo: true, curve: AnimationCurveExtensions.CubicEaseOut(0f, 0f, 1f, 1f));
+
 		[SerializeField]
-		private Tween tween = new Tween(delay: 1f, duration: 2f, repeat: -1, yoyo: true, curve: AnimationCurveExtensions.CubicEaseOut(0f, 0f, 1f, 1f));
+		[Readonly]
+		private Tween codedTween;
 
 		private float time;
 
 		//[SerializeField]
 		//private AnimationCurve curve = AnimationCurveExtensions.BounceInOut(0f, 0f, 3f, 2f);
 
+		private TestProps testProps;
+
 		private void Awake()
 		{
-			Debug.Log($"SampleBehaviour.Awake");
+			Debug.Log($"<b>SampleBehaviour.Awake</b>");
 		}
 
 		//private void OnEnable()
@@ -30,25 +37,56 @@ namespace Wondeluxe.Tweening.Samples
 
 		private void Start()
 		{
-			Debug.Log($"SampleBehaviour.Start");
+			Debug.Log($"<b>SampleBehaviour.Start</b>");
 
-			//tween = new Tween(
+			//codedTween = new Tween(
 			//	target: spriteTransform,
-			//	members: new { position = Vector3.up, rotation = Quaternion.Euler(0f, 0f, 90f) },
+			//	members: new TweenMembers { { "position", new Vector3(0f, 3f, 0f) } },//, { "localRotation", Quaternion.Euler(0f, 0f, 90f) }
 			//	delay: 1f,
 			//	duration: 2f,
 			//	repeat: 5,
 			//	yoyo: true,
-			//	ease: SineEase.InOut,
-			//	tag: "Awesome"
+			//	curve: AnimationCurveExtensions.SineEaseOut(0f, 0f, 1f, 1f),
+			//	tag: "Awesome Coded Tween"
 			//);
-			tween.OnRepeat += OnTweenRepeat;
+			//codedTween.OnRepeat += OnTweenRepeat;
+
+			testProps = new TestProps
+			{
+				X = spriteTransform.position.x,
+				Y = spriteTransform.position.y,
+				Rotation = spriteTransform.rotation.eulerAngles.z
+			};
+
+			codedTween = new Tween(
+				target: testProps,
+				members: new TweenMembers {
+					{ "X", testProps.X + 5f },
+					{ "Y", testProps.Y + 3f },
+					{ "Rotation", testProps.Rotation + 90f }
+				},
+				delay: 1f,
+				duration: 2f,
+				repeat: 5,
+				yoyo: true,
+				curve: AnimationCurveExtensions.SineEaseOut(0f, 0f, 1f, 1f),
+				tag: "Awesome Coded Tween"
+			);
 		}
 
 		private void Update()
 		{
 			time += Time.deltaTime;
-			tween.Update(Time.deltaTime);
+			//tween.Update(Time.deltaTime);
+			codedTween.Update(Time.deltaTime);
+
+			Vector3 spritePosition = spriteTransform.position;
+			spritePosition.x = testProps.X;
+			spritePosition.y = testProps.Y;
+
+			Quaternion spriteRotation = Quaternion.Euler(0f, 0f, testProps.Rotation);
+
+			spriteTransform.SetPositionAndRotation(spritePosition, spriteRotation);
 		}
 
 		private void OnTweenRepeat(Tween t)
@@ -92,6 +130,13 @@ namespace Wondeluxe.Tweening.Samples
 			Debug.Log($"Vector3Int (Value = {vector3IntValue}, ToString = {vector3IntString}, Parse = {Vector3IntExtensions.Parse(vector3IntString)})");
 			Debug.Log($"Color (Value = {colorValue}, ToString = {colorString}, Parse = {ColorExtensions.Parse(colorString)})");
 			Debug.Log($"Quaternion (Value = {quaternionValue:G}, ToString = {quaternionString}, Parse = {QuaternionExtensions.Parse(quaternionString):G})");
+		}
+
+		private class TestProps
+		{
+			public float X;
+			public float Y;
+			public float Rotation;
 		}
 	}
 }
