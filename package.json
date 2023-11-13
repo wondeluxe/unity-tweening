@@ -1,10 +1,13 @@
 {
 	"name": "com.wondeluxe.tweening",
-	"version": "0.0.1",
+	"version": "1.0.0",
 	"displayName": "Wondeluxe Tweening",
 	"description": "Library for creating scripted animation.",
 	"unity": "2020.3",
 	"unityRelease": "48f1",
+	"dependencies": {
+		"com.wondeluxe": "1.0.0"
+	},
 	"keywords": [
 		"wondeluxe",
 		"scripts",
