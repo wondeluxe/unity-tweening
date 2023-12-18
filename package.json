@@ -5,6 +5,7 @@
 	"description": "Library for creating scripted animation.",
 	"unity": "2020.3",
 	"unityRelease": "48f1",
+	"documentationUrl": "https://wondeluxe.github.io/unity-docs/tweening",
 	"dependencies": {
 		"com.wondeluxe": "1.0.0"
 	},
