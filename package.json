@@ -23,5 +23,8 @@
 			"description": "Example usage of the Tween class.",
 			"path": "Samples"
 		}
-	]
+	],
+	"author": {
+		"name": "Wondeluxe"
+	}
 }
